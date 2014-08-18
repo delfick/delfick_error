@@ -1,3 +1,7 @@
+from __future__ import print_function
+from contextlib import contextmanager
+import sys
+
 class DelfickError(Exception):
     """Helpful class for creating custom exceptions"""
     desc = ""
@@ -52,4 +56,53 @@ class DelfickError(Exception):
 
 class ProgrammerError(Exception):
     """For when the programmer should have prevented something happening"""
+
+class NotSpecified(object):
+    """Used to tell the difference between None and Empty"""
+
+class DelfickErrorTestMixin:
+    @contextmanager
+    def fuzzyAssertRaisesError(self, expected_kls, expected_msg_regex=NotSpecified, **values):
+        """
+        Assert that something raises a particular type of error.
+
+        The error raised must be a subclass of the expected_kls
+        Have a message that matches the specified regex.
+
+        And have atleast the values specified in it's kwargs.
+        """
+        try:
+            yield
+        except Exception as error:
+            try:
+                assert issubclass(error.__class__, expected_kls), "Expected {0}, got {1}".format(expected_kls, error.__class__)
+                if expected_msg_regex is not NotSpecified:
+                    self.assertRegexpMatches(expected_msg_regex, error.message)
+
+                if issubclass(error.__class__, DelfickError):
+                    errors = values.get("_errors")
+                    if "_errors" in values:
+                        del values["_errors"]
+
+                    self.assertDictContainsSubset(values, error.kwargs)
+                    if errors:
+                        self.assertEqual(sorted(error.errors), sorted(errors))
+            except AssertionError:
+                exc_info = sys.exc_info()
+                try:
+                    print("!" * 20)
+                    print("Got error: {0}".format(error))
+                    msg = "Expected: {0}".format(expected_kls)
+                    if expected_msg_regex is not NotSpecified:
+                        msg = "{0}: {1}".format(msg, expected_msg_regex)
+                    if values:
+                        msg = "{0}: {1}".format(msg, values)
+                    print(msg)
+                    print("!" * 20)
+                finally:
+                    raise exc_info[0], exc_info[1], exc_info[2]
+        else:
+            assert False, "Expected an exception to be raised\n\texpected_kls: {0}\n\texpected_msg_regex: {1}\n\thave_atleast: {2}".format(
+                expected_kls, expected_msg_regex, values
+            )
 
