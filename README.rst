@@ -13,7 +13,7 @@ The point of this exception class is to be able to create an error class that
 automatically combines keyword arguments given to the exception instance:
 
 .. code-block:: python
-    
+
     >>> from delfick_error import DelfickError
     >>> DelfickError()
     DelfickError('',)
@@ -63,15 +63,26 @@ formatted when converting the error to a string.
 
 .. code-block:: python
 
-    >>> class SomeObject(object):                                                                                                                                                                                                                  
-    ...   def __init__(self, val):                                                                                                                                                                                                                 
-    ...     self.val = val                                                                                                                                                                                                                         
-    ...   def delfick_error_format(self, key):                                                                                                                                                                                                     
-    ...     return "{0}_formatted_{1}".format(self.val, key)                                                                                                                                                                                       
+    >>> class SomeObject(object):
+    ...   def __init__(self, val):
+    ...     self.val = val
+    ...   def delfick_error_format(self, key):
+    ...     return "{0}_formatted_{1}".format(self.val, key)
     ... 
     >>> obj = SomeObject(20)
     >>> str(DelfickError(a=1, b=obj))
     'a=1\tb=20_formatted_b'
+
+Changelog
+---------
+
+1.1
+    Now with tests!
+
+    And DelfickErrorTestMixin for your testing pleasure
+
+1.0
+    Initial release
 
 Installation
 ------------
