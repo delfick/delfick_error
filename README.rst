@@ -76,6 +76,9 @@ formatted when converting the error to a string.
 Changelog
 ---------
 
+1.2
+    Tests work in python26, python27 and python34
+
 1.1
     Now with tests!
 
