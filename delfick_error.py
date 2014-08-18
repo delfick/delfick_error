@@ -1,6 +1,23 @@
 from __future__ import print_function
+
 from contextlib import contextmanager
+import unittest
 import sys
+import six
+import re
+
+if hasattr(unittest, "util"):
+    safe_repr = unittest.util.safe_repr
+else:
+    _MAX_LENGTH = 80
+    def safe_repr(obj, short=False):
+        try:
+            result = repr(obj)
+        except Exception:
+            result = object.__repr__(obj)
+        if not short or len(result) < _MAX_LENGTH:
+            return result
+        return result[:_MAX_LENGTH] + ' [truncated]...'
 
 class DelfickError(Exception):
     """Helpful class for creating custom exceptions"""
@@ -76,15 +93,21 @@ class DelfickErrorTestMixin:
         except Exception as error:
             try:
                 assert issubclass(error.__class__, expected_kls), "Expected {0}, got {1}".format(expected_kls, error.__class__)
-                if expected_msg_regex is not NotSpecified:
-                    self.assertRegexpMatches(expected_msg_regex, error.message)
 
-                if issubclass(error.__class__, DelfickError):
+                if not issubclass(error.__class__, DelfickError):
+                    # For normal exceptions we just regex against the string of the whole exception
+                    if expected_msg_regex is not NotSpecified:
+                        self.assertMatchingRegex(expected_msg_regex, str(error))
+                else:
+                    # For special DelfickError exceptions, we compare against error.message, error.kwargs and error._errors
+                    if expected_msg_regex is not NotSpecified:
+                        self.assertMatchingRegex(expected_msg_regex, error.message)
+
                     errors = values.get("_errors")
                     if "_errors" in values:
                         del values["_errors"]
 
-                    self.assertDictContainsSubset(values, error.kwargs)
+                    self.assertDictContains(values, error.kwargs)
                     if errors:
                         self.assertEqual(sorted(error.errors), sorted(errors))
             except AssertionError:
@@ -100,9 +123,45 @@ class DelfickErrorTestMixin:
                     print(msg)
                     print("!" * 20)
                 finally:
-                    raise exc_info[0], exc_info[1], exc_info[2]
+                    six.reraise(exc_info[0], exc_info[1], exc_info[2])
         else:
             assert False, "Expected an exception to be raised\n\texpected_kls: {0}\n\texpected_msg_regex: {1}\n\thave_atleast: {2}".format(
                 expected_kls, expected_msg_regex, values
             )
+
+    def assertDictContains(self, expected, actual, msg=None):
+        """Checks whether actual is a superset of expected."""
+        missing = []
+        mismatched = []
+        for key, value in expected.items():
+            if key not in actual:
+                missing.append(safe_repr(key))
+            elif value != actual[key]:
+                nxt = "{{{0}: expected={1}, got={2}}}".format(safe_repr(key), safe_repr(value), safe_repr(actual[key]))
+                mismatched.append(nxt)
+
+        if not (missing or mismatched):
+            return
+
+        error = []
+        if missing:
+            error.append("Missing: {0}".format(', '.join(sorted(missing))))
+
+        if mismatched:
+            error.append("Mismatched: {0}".format(', '.join(sorted(mismatched))))
+
+        if hasattr(self, "_formatMessage"):
+            self.fail(self._formatMessage(msg, '; '.join(error)))
+        else:
+            self.fail(msg or '; '.join(error))
+
+    def assertMatchingRegex(self, text, expected_regex, msg=None):
+        """Fail the test unless the text matches the regular expression."""
+        if isinstance(expected_regex, (str, bytes)):
+            assert expected_regex, "expected_regex must not be empty."
+            expected_regex = re.compile(expected_regex)
+        if not expected_regex.search(text):
+            msg = msg or "Regex didn't match"
+            msg = '%s: %r not found in %r' % (msg, expected_regex.pattern, text)
+            raise self.failureException(msg)
 

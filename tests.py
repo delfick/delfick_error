@@ -149,7 +149,7 @@ describe TestCase, "Tests mixin":
                 if part is InsideManager:
                     pass
                 elif part is AssertionRaised:
-                    assert val.message.startswith("Expected an exception to be raised"), val.message
+                    assert str(val).startswith("Expected an exception to be raised"), str(val)
             self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
         it "complains if exception is not a subclass of what is expected":
@@ -160,7 +160,7 @@ describe TestCase, "Tests mixin":
                 if part is InsideManager:
                     iterator.send(raised)
                 elif part is AssertionRaised:
-                    self.assertEqual(val.message, "Expected <type 'exceptions.ValueError'>, got <type 'exceptions.TypeError'>")
+                    self.assertEqual(str(val), "Expected {0}, got {1}".format(ValueError, TypeError))
 
             self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
@@ -173,7 +173,7 @@ describe TestCase, "Tests mixin":
                 if part is InsideManager:
                     iterator.send(raised)
                 elif part is AssertionRaised:
-                    self.assertEqual(val.message, "Regexp didn't match: 'blah' not found in 'meh'")
+                    self.assertEqual(str(val), "Regex didn't match: 'blah' not found in 'meh'")
 
             self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
@@ -198,7 +198,7 @@ describe TestCase, "Tests mixin":
                     if part is InsideManager:
                         iterator.send(Expected(one=1, two=2, three=3))
                     elif part is AssertionRaised:
-                        self.assertEqual(val.message, "Mismatched values: 'three', expected: 1, actual: 3,'two', expected: 1, actual: 2")
+                        self.assertEqual(str(val), "Mismatched: {'three': expected=1, got=3}, {'two': expected=1, got=2}")
 
                 self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
@@ -210,7 +210,7 @@ describe TestCase, "Tests mixin":
                     if part is InsideManager:
                         iterator.send(Expected(one=1))
                     elif part is AssertionRaised:
-                        self.assertEqual(val.message, "Missing: 'four','three'")
+                        self.assertEqual(str(val), "Missing: 'four', 'three'")
 
                 self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
@@ -235,7 +235,7 @@ describe TestCase, "Tests mixin":
                     if part is InsideManager:
                         iterator.send(Raised("testing for great good", one=1, three=3))
                     elif part is AssertionRaised:
-                        self.assertEqual(val.message, "Regexp didn't match: 'testing for great good' not found in 'testing, 1.. 2.. 3'")
+                        self.assertEqual(str(val), "Regex didn't match: 'testing for great good' not found in 'testing, 1.. 2.. 3'")
 
                 self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
@@ -247,7 +247,7 @@ describe TestCase, "Tests mixin":
                     if part is InsideManager:
                         iterator.send(Expected(one=1, two=2, _errors=[20, 5, 4, 3]))
                     elif part is AssertionRaised:
-                        assert val.message.startswith("Lists differ: [3, 4, 5, 20] != [3, 4, 5, 10]"), val.message
+                        assert "[3, 4, 5, 20] != [3, 4, 5, 10]" in str(val), str(val)
 
                 self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
