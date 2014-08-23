@@ -176,3 +176,19 @@ class DelfickErrorTestMixin:
             msg = '%s: %r not found in %r' % (msg, expected_regex.pattern, text)
             raise self.failureException(msg)
 
+    def assertIs(self, expr1, expr2, msg=None):
+        """For Python2.6 compatibility"""
+        spr = None
+        if type(DelfickErrorTestMixin) is type:
+            spr = super(DelfickErrorTestMixin, self)
+
+        if spr and hasattr(spr, "assertIs"):
+            return spr.assertIs(self, expr1, expr2, msg)
+        else:
+            if expr1 is not expr2:
+                standardMsg = '%s is not %s' % (safe_repr(expr1), safe_repr(expr2))
+                if hasattr(self, "_formatMessage"):
+                    self.fail(self._formatMessage(msg, standardMsg))
+                else:
+                    self.fail(msg or standardMsg)
+

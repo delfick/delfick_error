@@ -9,6 +9,7 @@ from unittest import TestCase
 import random
 import uuid
 import mock
+import six
 
 # Used in the tests
 class AError(DelfickError): pass
@@ -157,6 +158,32 @@ class DelfickErrorCase(TestCase, DelfickErrorTestMixin):
     def runTest(self, *args, **kwargs): pass
 
 describe TestCase, "Tests mixin":
+    describe "AssertIs":
+        it "provides an implementation of assertIs that works":
+            m1 = mock.Mock(name='m1')
+            m2 = mock.Mock(name='m2')
+
+            try:
+                DelfickErrorCase().assertIs(m1, m2, "blah")
+                assert False, "Expected an assertion error"
+            except AssertionError as error:
+                if six.PY3:
+                    self.assertEqual(str(error), "{0} is not {1} : blah".format(m1, m2))
+                else:
+                    self.assertEqual(str(error), "blah")
+
+            try:
+                DelfickErrorCase().assertIs(m1, m2)
+                assert False, "Expected an assertion error"
+            except AssertionError as error:
+                self.assertEqual(str(error), "{0} is not {1}".format(m1, m2))
+
+            try:
+                DelfickErrorCase().assertIs(m1, m1)
+                assert True, "Expected no assertion error"
+            except AssertionError as error:
+                assert False, "Didn't expect an assertion error, got {0}".format(error)
+
     describe "Fuzzy assert raises":
         def expecting_raised_assertion(self, *args, **kwargs):
             """Yield (iterator, val) from _expecting_raised_assertion"""
