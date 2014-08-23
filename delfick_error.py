@@ -108,11 +108,11 @@ class DelfickErrorTestMixin:
                 if not issubclass(error.__class__, DelfickError):
                     # For normal exceptions we just regex against the string of the whole exception
                     if expected_msg_regex is not NotSpecified:
-                        self.assertMatchingRegex(expected_msg_regex, str(error))
+                        self.assertMatchingRegex(str(error), expected_msg_regex)
                 else:
                     # For special DelfickError exceptions, we compare against error.message, error.kwargs and error._errors
                     if expected_msg_regex is not NotSpecified:
-                        self.assertMatchingRegex(expected_msg_regex, error.message)
+                        self.assertMatchingRegex(error.message, expected_msg_regex)
 
                     errors = values.get("_errors")
                     if "_errors" in values:

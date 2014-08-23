@@ -255,7 +255,7 @@ describe TestCase, "Tests mixin":
                 if part is InsideManager:
                     iterator.send(raised)
                 elif part is AssertionRaised:
-                    self.assertEqual(str(val), "Regex didn't match: 'blah' not found in 'meh'")
+                    self.assertEqual(str(val), "Regex didn't match: 'meh' not found in 'blah'")
 
             self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
@@ -317,7 +317,7 @@ describe TestCase, "Tests mixin":
                     if part is InsideManager:
                         iterator.send(Raised("testing for great good", one=1, three=3))
                     elif part is AssertionRaised:
-                        self.assertEqual(str(val), "Regex didn't match: 'testing for great good' not found in 'testing, 1.. 2.. 3'")
+                        self.assertEqual(str(val), "Regex didn't match: 'testing, 1.. 2.. 3' not found in 'testing for great good'")
 
                 self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
 
