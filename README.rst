@@ -76,6 +76,11 @@ formatted when converting the error to a string.
 Changelog
 ---------
 
+1.3
+    Made DelfickError Orderable
+
+    Added an assertIs shim to DelfickErrorTestMixin
+
 1.2
     Tests work in python26, python27 and python34
 
