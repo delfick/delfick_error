@@ -76,6 +76,9 @@ formatted when converting the error to a string.
 Changelog
 ---------
 
+1.4
+    Fixed an embarrassing bug
+
 1.3
     Made DelfickError Orderable
 
