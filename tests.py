@@ -6,8 +6,14 @@ from delfick_error import DelfickError, DelfickErrorTestMixin
 
 from contextlib import contextmanager
 from unittest import TestCase
+import random
 import uuid
 import mock
+
+# Used in the tests
+class AError(DelfickError): pass
+class BError(DelfickError): pass
+class CError(DelfickError): pass
 
 describe TestCase, "DelfickError":
     it "creates a message that combines desc on the class, args and kwargs":
@@ -88,6 +94,55 @@ describe TestCase, "DelfickError":
             thing.delfick_error_format.side_effect = error
 
             self.assertEqual(DelfickError().formatted_val(key, thing), "<|Failed to format val for exception: val={0}, error={1}|>".format(thing, error))
+
+    describe "Sorting":
+        def assertSorted(self, *errors):
+            """Shuffle the provided errors and make sure they always get sorted into the provided order"""
+            expected = list(errors)
+            errors = list(errors)
+            print("Expect result of {0}".format(expected))
+            print("---")
+            def compare(attmpt):
+                print("Sorting {0}".format(attmpt))
+                sortd = sorted(attmpt)
+                print("Got {0}".format(sortd))
+                self.assertEqual(sortd, expected)
+                print("===")
+
+            for attempt in (errors, list(reversed(errors))):
+                compare(attempt)
+
+            for _ in range(5):
+                random.shuffle(errors)
+                compare(errors)
+
+        it "sorts based on class first":
+            self.assertSorted(
+                AError("b"), BError("d"), CError("a")
+            )
+
+            self.assertSorted(
+                AError("b", b=2), BError("a", a=1)
+            )
+
+            self.assertSorted(
+                AError("b", c=3, _errors=[3, 4]), CError("a", c=2, _errors=[1, 2])
+            )
+
+        it "sorts on message second":
+            self.assertSorted(
+                AError("zadf"), AError("zsdf"), BError("gd"), BError("he"), CError("a")
+            )
+
+        it "sorts on kwargs third":
+            self.assertSorted(
+                AError("zsdf", b=2, c=3), BError("zsdf", a=1), BError("zsdf", a=2, b=4), CError("zsdf", c=1)
+            )
+
+        it "sorts on errors last":
+            self.assertSorted(
+                AError("asdf", a=1, _errors=[5, 4]), AError("asdf", a=1, _errors=[6, 1]), BError("asdf", a=1, _errors=[1, 2]), BError("asdf", a=1, _errors=[1, 2, 1])
+            )
 
 # Some objects for my expecting_raised_assertion helper
 class Called(object): pass

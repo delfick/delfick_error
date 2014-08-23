@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from total_ordering import total_ordering
 from contextlib import contextmanager
 import unittest
 import sys
@@ -19,6 +20,7 @@ else:
             return result
         return result[:_MAX_LENGTH] + ' [truncated]...'
 
+@total_ordering
 class DelfickError(Exception):
     """Helpful class for creating custom exceptions"""
     desc = ""
@@ -75,7 +77,10 @@ class DelfickError(Exception):
 
     def __eq__(self, error):
         """Say whether this error is like the other error"""
-        return error.__class__ == self.__class__ and error.message == self.message and error.kwargs == self.kwargs
+        return error.__class__ == self.__class__ and error.message == self.message and error.kwargs == self.kwargs and sorted(self.errors) == sorted(error.errors)
+
+    def __lt__(self, error):
+        return (self.__class__.__name__, self.message, sorted(self.kwargs.items()), self.errors) < (error.__class__.__name__, error.message, sorted(error.kwargs.items()), error.errors)
 
 class ProgrammerError(Exception):
     """For when the programmer should have prevented something happening"""

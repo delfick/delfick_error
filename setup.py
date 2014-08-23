@@ -5,6 +5,10 @@ setup(
     , version = "1.2"
     , py_modules = ['delfick_error']
 
+    , install_requires =
+      [ 'total-ordering'
+      ]
+
     , extras_require =
       { "tests":
         [ "noseOfYeti>=1.4.9"
