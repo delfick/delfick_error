@@ -37,6 +37,12 @@ class DelfickError(Exception):
             message = "{0}\nerrors:\n\t{1}".format(message, "\n\t".join(str(error) for error in self.errors))
         return message
 
+    def __unicode__(self):
+        return str(self).decode("utf-8")
+
+    def __repr__(self):
+        return "{0}({1}, {2}, _errors={3})".format(self.__class__.__name__, self.message, ', '.join("{0}={1}".format(k, v) for k, v in self.kwargs.items()), self.errors)
+
     def oneline(self):
         """Get back the error as a oneliner"""
         desc = self.desc
