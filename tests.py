@@ -68,6 +68,12 @@ describe TestCase, "DelfickError":
         error = DelfickError(blah=WithFormat(1), meh=WithFormat(2), things=3)
         self.assertEqual(str(error), "blah=formatted_blah_1\tmeh=formatted_meh_2\tthings=3")
 
+    it "is hashable":
+        e0 = BError("e0")
+        e1 = AError("e1", one=2, _errors=[e0])
+        e2 = CError(three=4)
+        self.assertEqual(sorted({e0:1, e1:1, e2:3}.items()), sorted([(e0, 1), (e1, 1), (e2, 3)]))
+
     describe "formatted_val":
         it "just returns val if has no delfick_error_format attribute":
             key = mock.Mock(name="key")

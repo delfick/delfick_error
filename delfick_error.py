@@ -3,6 +3,7 @@ from __future__ import print_function
 from total_ordering import total_ordering
 from contextlib import contextmanager
 import unittest
+import hashlib
 import sys
 import six
 import re
@@ -45,6 +46,9 @@ class DelfickError(Exception):
     def __repr__(self):
         return "{0}({1}, {2}, _errors={3})".format(self.__class__.__name__, self.message, ', '.join("{0}={1}".format(k, v) for k, v in self.kwargs.items()), self.errors)
 
+    def __hash__(self):
+        return hash(self.as_tuple())
+
     def oneline(self):
         """Get back the error as a oneliner"""
         desc = self.desc
@@ -80,7 +84,10 @@ class DelfickError(Exception):
         return error.__class__ == self.__class__ and error.message == self.message and error.kwargs == self.kwargs and sorted(self.errors) == sorted(error.errors)
 
     def __lt__(self, error):
-        return (self.__class__.__name__, self.message, sorted(self.kwargs.items()), self.errors) < (error.__class__.__name__, error.message, sorted(error.kwargs.items()), error.errors)
+        return self.as_tuple() < error.as_tuple()
+
+    def as_tuple(self):
+        return (self.__class__.__name__, self.message, tuple(sorted(self.kwargs.items())), tuple(self.errors))
 
 class ProgrammerError(Exception):
     """For when the programmer should have prevented something happening"""
