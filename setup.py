@@ -7,6 +7,7 @@ setup(
 
     , install_requires =
       [ 'total-ordering'
+      , 'six'
       ]
 
     , extras_require =
