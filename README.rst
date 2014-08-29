@@ -76,6 +76,9 @@ formatted when converting the error to a string.
 Changelog
 ---------
 
+1.6
+    Added six to install_requires
+
 1.5
     Made DelfickError hashable
 
