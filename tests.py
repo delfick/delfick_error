@@ -55,7 +55,7 @@ describe TestCase, "DelfickError":
         self.assertEqual(error.errors, errors)
         assert "_errors" not in error.kwargs
 
-        self.assertEqual(str(error), "\"hmmm\"\nerrors:\n\t{0}\n\t{1}".format(error1, error2))
+        self.assertEqual(str(error), "\"hmmm\"\nerrors:\n=======\n\n\t{0}\n-------\n\t{1}\n-------".format(error1, error2))
 
     it "can format special values":
         class WithFormat(object):

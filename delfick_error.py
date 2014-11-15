@@ -37,7 +37,7 @@ class DelfickError(Exception):
     def __str__(self):
         message = self.oneline()
         if self.errors:
-            message = "{0}\nerrors:\n\t{1}".format(message, "\n\t".join(str(error) for error in self.errors))
+            message = "{0}\nerrors:\n=======\n\n\t{1}".format(message, "\n\t".join("{0}\n-------".format('\n\t'.join(str(error).split('\n'))) for error in self.errors))
         return message
 
     def __unicode__(self):
