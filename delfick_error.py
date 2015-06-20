@@ -95,6 +95,10 @@ class ProgrammerError(Exception):
 class NotSpecified(object):
     """Used to tell the difference between None and Empty"""
 
+class UserQuit(object):
+    """Raise this if the user quit the application"""
+    desc = "User Quit"
+
 class DelfickErrorTestMixin:
     @contextmanager
     def fuzzyAssertRaisesError(self, expected_kls, expected_msg_regex=NotSpecified, **values):
