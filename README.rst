@@ -76,6 +76,9 @@ formatted when converting the error to a string.
 Changelog
 ---------
 
+1.7
+    Added default UserQuit exception
+
 1.6
     Added six to install_requires
 
