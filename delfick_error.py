@@ -95,7 +95,7 @@ class ProgrammerError(Exception):
 class NotSpecified(object):
     """Used to tell the difference between None and Empty"""
 
-class UserQuit(object):
+class UserQuit(DelfickError):
     """Raise this if the user quit the application"""
     desc = "User Quit"
 
