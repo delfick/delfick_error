@@ -47,7 +47,7 @@ class DelfickError(Exception):
         return "{0}({1}, {2}, _errors={3})".format(self.__class__.__name__, self.message, ', '.join("{0}={1}".format(k, v) for k, v in self.kwargs.items()), self.errors)
 
     def __hash__(self):
-        return hash(self.as_tuple())
+        return hash(self.as_tuple(for_hash=True))
 
     def oneline(self):
         """Get back the error as a oneliner"""
@@ -86,8 +86,11 @@ class DelfickError(Exception):
     def __lt__(self, error):
         return self.as_tuple() < error.as_tuple()
 
-    def as_tuple(self):
-        return (self.__class__.__name__, self.message, tuple(sorted(self.kwargs.items())), tuple(self.errors))
+    def as_tuple(self, for_hash=False):
+        kwarg_items = sorted(self.kwargs.items())
+        if for_hash:
+            kwarg_items = [(key, str(val)) for key, val in kwarg_items]
+        return (self.__class__.__name__, self.message, tuple(kwarg_items), tuple(self.errors))
 
 class ProgrammerError(Exception):
     """For when the programmer should have prevented something happening"""
