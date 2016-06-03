@@ -278,6 +278,33 @@ describe TestCase, "Tests mixin":
             self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
 
         describe "For DelfickError exceptions":
+            it "works on fake DelfickError class":
+                class Expected(Exception):
+                    def __init__(self, message, kwarg1):
+                        self.message = message
+                        self.kwarg1 = kwarg1
+                        self.kwargs = dict(kwarg1=kwarg1)
+                        self._fake_delfick_error = True
+
+                    def __str__(self):
+                        return "Expected: {0}\tkwarg1={1}".format(self.message, self.kwarg1)
+
+                called = []
+                for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, "something", kwarg1="meh"):
+                    if part is InsideManager:
+                        iterator.send(Expected("something", kwarg1="meh"))
+
+                self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
+
+                called = []
+                for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, "something", kwarg1="meh"):
+                    if part is InsideManager:
+                        iterator.send(Expected("something", kwarg1="other"))
+                    elif part is AssertionRaised:
+                        self.assertEqual(str(val), '''Mismatched: {'kwarg1': expected='meh', got='other'}''')
+
+                self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
             it "complains if any given kwargs doesn't match":
                 class Expected(DelfickError): pass
 

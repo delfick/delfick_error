@@ -119,7 +119,7 @@ class DelfickErrorTestMixin:
             try:
                 assert issubclass(error.__class__, expected_kls), "Expected {0}, got {1}".format(expected_kls, error.__class__)
 
-                if not issubclass(error.__class__, DelfickError):
+                if not issubclass(error.__class__, DelfickError) and not getattr(error, "_fake_delfick_error", False):
                     # For normal exceptions we just regex against the string of the whole exception
                     if expected_msg_regex is not NotSpecified:
                         self.assertMatchingRegex(str(error), expected_msg_regex)
