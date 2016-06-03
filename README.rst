@@ -76,6 +76,9 @@ formatted when converting the error to a string.
 Changelog
 ---------
 
+1.7.2
+    Making it possible for fuzzyAssertsError to match fake delfick_error classes
+
 1.7
     Added default UserQuit exception
 
