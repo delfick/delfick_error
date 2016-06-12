@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from total_ordering import total_ordering
 from contextlib import contextmanager
+import traceback
 import unittest
 import hashlib
 import sys
@@ -116,6 +117,7 @@ class DelfickErrorTestMixin:
         try:
             yield
         except Exception as error:
+            original_exc_info = sys.exc_info()
             try:
                 assert issubclass(error.__class__, expected_kls), "Expected {0}, got {1}".format(expected_kls, error.__class__)
 
@@ -139,7 +141,9 @@ class DelfickErrorTestMixin:
                 exc_info = sys.exc_info()
                 try:
                     print("!" * 20)
-                    print("Got error: {0}".format(error))
+                    print(''.join(["Original Traceback\n"] + traceback.format_tb(original_exc_info[2])).strip())
+                    print(error)
+                    print()
                     msg = "Expected: {0}".format(expected_kls)
                     if expected_msg_regex is not NotSpecified:
                         msg = "{0}: {1}".format(msg, expected_msg_regex)
