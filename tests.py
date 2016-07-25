@@ -20,19 +20,23 @@ describe TestCase, "DelfickError":
     it "creates a message that combines desc on the class, args and kwargs":
         error = DelfickError("The syncing was bad", a=4, b=5)
         self.assertEqual(str(error), '"The syncing was bad"\ta=4\tb=5')
+        self.assertEqual(error.as_dict(), {"message": "The syncing was bad", "a": 4, "b": 5})
 
     it "Works without a message":
         error = DelfickError(a_thing=4, b=5)
         self.assertEqual(str(error), 'a_thing=4\tb=5')
+        self.assertEqual(error.as_dict(), {"a_thing": 4, "b": 5})
 
     it "works with subclasses of DelfickError":
         class OtherSyncingErrors(DelfickError):
             desc = "Oh my!"
         error = OtherSyncingErrors("hmmm", d=8, e=9)
         self.assertEqual(str(error), '"Oh my!. hmmm"\td=8\te=9')
+        self.assertEqual(error.as_dict(), {"message": "Oh my!. hmmm", "d": 8, "e": 9})
 
         error2 = OtherSyncingErrors(f=10, g=11)
         self.assertEqual(str(error2), '"Oh my!"\tf=10\tg=11')
+        self.assertEqual(error2.as_dict(), {"message": "Oh my!", "f": 10, "g": 11})
 
     it "can tell if an error is equal to another error":
         class Sub1(DelfickError):
@@ -47,15 +51,34 @@ describe TestCase, "DelfickError":
         self.assertEqual(Sub1("blah", one=1, two=2), Sub1("blah", two=2, one=1))
 
     it "treats _errors as a special kwarg":
-        error1 = uuid.uuid1()
-        error2 = uuid.uuid1()
-        errors = [error1, error2]
+        error1 = str(uuid.uuid1())
+        error1_as_dict = uuid.uuid1()
+
+        error2 = str(uuid.uuid1())
+        error2_as_dict = uuid.uuid1()
+
+        class error1_obj(object):
+            def __str__(self):
+                return error1
+
+            def as_dict(self):
+                return error1_as_dict
+
+        class error2_obj(object):
+            def __str__(self):
+                return error2
+
+            def as_dict(self):
+                return error2_as_dict
+
+        errors = [error1_obj(), error2_obj()]
 
         error = DelfickError("hmmm", _errors=errors)
         self.assertEqual(error.errors, errors)
         assert "_errors" not in error.kwargs
 
         self.assertEqual(str(error), "\"hmmm\"\nerrors:\n=======\n\n\t{0}\n-------\n\t{1}\n-------".format(error1, error2))
+        self.assertEqual(error.as_dict(), {"message": "hmmm", "errors": [error1_as_dict, error2_as_dict]})
 
     it "can format special values":
         class WithFormat(object):
@@ -67,6 +90,7 @@ describe TestCase, "DelfickError":
 
         error = DelfickError(blah=WithFormat(1), meh=WithFormat(2), things=3)
         self.assertEqual(str(error), "blah=formatted_blah_1\tmeh=formatted_meh_2\tthings=3")
+        self.assertEqual(error.as_dict(), {"blah": "formatted_blah_1", "meh": "formatted_meh_2", "things": 3})
 
     it "is hashable":
         e0 = BError("e0")

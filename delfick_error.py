@@ -41,6 +41,28 @@ class DelfickError(Exception):
             message = "{0}\nerrors:\n=======\n\n\t{1}".format(message, "\n\t".join("{0}\n-------".format('\n\t'.join(str(error).split('\n'))) for error in self.errors))
         return message
 
+    def as_dict(self):
+        desc = self.desc
+        message = self.message
+        if desc:
+            if message:
+                message = ". {0}".format(message)
+            desc = "{0}{1}".format(desc, message)
+        else:
+            if message:
+                desc = message
+            else:
+                desc = None
+
+        res = {}
+        if desc is not None:
+            res["message"] = desc
+        res.update(dict((k, self.formatted_val(k, v)) for k, v in self.kwargs.items()))
+
+        if self.errors:
+            res["errors"] = [e.as_dict() for e in self.errors]
+        return res
+
     def __unicode__(self):
         return str(self).decode("utf-8")
 
