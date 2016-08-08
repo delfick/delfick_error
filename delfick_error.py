@@ -60,7 +60,7 @@ class DelfickError(Exception):
         res.update(dict((k, self.formatted_val(k, v)) for k, v in self.kwargs.items()))
 
         if self.errors:
-            res["errors"] = [e.as_dict() for e in self.errors]
+            res["errors"] = [e if not hasattr(e, "as_dict") else e.as_dict() for e in self.errors]
         return res
 
     def __unicode__(self):
