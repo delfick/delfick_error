@@ -214,6 +214,32 @@ describe TestCase, "Tests mixin":
             except AssertionError as error:
                 assert False, "Didn't expect an assertion error, got {0}".format(error)
 
+    describe "AssertIsNot":
+        it "provides an implementation of assertIsNot that works":
+            m1 = mock.Mock(name='m1')
+            m2 = mock.Mock(name='m2')
+
+            try:
+                DelfickErrorCase().assertIsNot(m1, m1, "blah")
+                assert False, "Expected an assertion error"
+            except AssertionError as error:
+                if six.PY3:
+                    self.assertEqual(str(error), "unexpectedly identical: {0} : blah".format(m1, m1))
+                else:
+                    self.assertEqual(str(error), "blah")
+
+            try:
+                DelfickErrorCase().assertIsNot(m1, m1)
+                assert False, "Expected an assertion error"
+            except AssertionError as error:
+                self.assertEqual(str(error), "unexpectedly identical: {0}".format(m1, m1))
+
+            try:
+                DelfickErrorCase().assertIsNot(m1, m2)
+                assert True, "Expected no assertion error"
+            except AssertionError as error:
+                assert False, "Didn't expect an assertion error, got {0}".format(error)
+
     describe "Fuzzy assert raises":
         def expecting_raised_assertion(self, *args, **kwargs):
             """Yield (iterator, val) from _expecting_raised_assertion"""

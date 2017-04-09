@@ -232,3 +232,18 @@ class DelfickErrorTestMixin:
                 else:
                     self.fail(msg or standardMsg)
 
+    def assertIsNot(self, expr1, expr2, msg=None):
+        """For Python2.6 compatibility"""
+        spr = None
+        if type(DelfickErrorTestMixin) is type:
+            spr = super(DelfickErrorTestMixin, self)
+
+        if spr and hasattr(spr, "assertIsNot"):
+            return spr.assertIsNot(self, expr1, expr2, msg)
+        else:
+            if expr1 is expr2:
+                standardMsg = 'unexpectedly identical: %s' % (safe_repr(expr1))
+                if hasattr(self, "_formatMessage"):
+                    self.fail(self._formatMessage(msg, standardMsg))
+                else:
+                    self.fail(msg or standardMsg)
