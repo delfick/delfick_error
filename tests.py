@@ -50,6 +50,23 @@ describe TestCase, "DelfickError":
         self.assertEqual(Sub1("blah"), Sub1("blah"))
         self.assertEqual(Sub1("blah", one=1, two=2), Sub1("blah", two=2, one=1))
 
+    it "can tell if an error is equal to another error using delfick_error_format":
+        class Sub1(DelfickError):
+            desc = "sub"
+
+        class Thing(object):
+            def __init__(self, val):
+                self.val = val
+
+        self.assertEqual(Sub1("blah"), Sub1("blah"))
+        self.assertNotEqual(Sub1("blah", one=Thing(1)), Sub1("blah", one=Thing(1)))
+
+        class BetterThing(Thing):
+            def delfick_error_format(self, key):
+                return "{0}:{1}".format(key, self.val)
+
+        self.assertEqual(Sub1("blah", one=BetterThing(1)), Sub1("blah", one=BetterThing(1)))
+
     it "treats _errors as a special kwarg":
         error1 = str(uuid.uuid1())
         error1_as_dict = uuid.uuid1()
@@ -88,9 +105,14 @@ describe TestCase, "DelfickError":
             def delfick_error_format(self, key):
                 return "formatted_{0}_{1}".format(key, self.val)
 
-        error = DelfickError(blah=WithFormat(1), meh=WithFormat(2), things=3)
+        wf1 = WithFormat(1)
+        wf2 = WithFormat(2)
+        error = DelfickError(blah=wf1, meh=wf2, things=3)
         self.assertEqual(str(error), "blah=formatted_blah_1\tmeh=formatted_meh_2\tthings=3")
         self.assertEqual(error.as_dict(), {"blah": "formatted_blah_1", "meh": "formatted_meh_2", "things": 3})
+
+        self.assertEqual(error.as_tuple()[2], (("blah", wf1), ("meh", wf2), ("things", 3)))
+        self.assertEqual(error.as_tuple(formatted=True)[2], (("blah", "formatted_blah_1"), ("meh", "formatted_meh_2"), ("things", 3)))
 
     it "is hashable":
         e0 = BError("e0")
@@ -426,3 +448,23 @@ describe TestCase, "Tests mixin":
 
                 self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
 
+            it "does a sorted comparison of the errors taking delfick_error_format objects into account":
+                class Expected(DelfickError): pass
+
+                class Thing(object):
+                    def __init__(self, val):
+                        self.val = val
+
+                    def delfick_error_format(self, key):
+                        return "{0}:{1}".format(key, self.val)
+
+                class Error(DelfickError): pass
+
+                e = lambda val: Error(thing=Thing(val))
+
+                called = []
+                for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, one=1, _errors=[e(3), e(5), e(10), e(4)]):
+                    if part is InsideManager:
+                        iterator.send(Expected(one=1, two=2, _errors=[e(10), e(5), e(4), e(3)]))
+
+                self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])

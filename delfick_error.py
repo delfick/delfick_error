@@ -104,13 +104,26 @@ class DelfickError(Exception):
 
     def __eq__(self, error):
         """Say whether this error is like the other error"""
-        return error.__class__ == self.__class__ and error.message == self.message and error.kwargs == self.kwargs and sorted(self.errors) == sorted(error.errors)
+        if error.__class__ != self.__class__ or error.message != self.message:
+            return False
+
+        self_kwargs = self.as_tuple(formatted=True)[2]
+        error_kwargs = error.as_tuple(formatted=True)[2]
+        return error_kwargs == self_kwargs and sorted(self.errors) == sorted(error.errors)
 
     def __lt__(self, error):
-        return self.as_tuple() < error.as_tuple()
+        return self.as_tuple(formatted=True) < error.as_tuple(formatted=True)
 
-    def as_tuple(self, for_hash=False):
+    def as_tuple(self, for_hash=False, formatted=False):
         kwarg_items = sorted(self.kwargs.items())
+        if formatted:
+            final = []
+            for key, val in kwarg_items:
+                if hasattr(val, "delfick_error_format"):
+                    final.append((key, val.delfick_error_format(key)))
+                else:
+                    final.append((key, val))
+            kwarg_items = sorted(final)
         if for_hash:
             kwarg_items = [(key, str(val)) for key, val in kwarg_items]
         return (self.__class__.__name__, self.message, tuple(kwarg_items), tuple(self.errors))
