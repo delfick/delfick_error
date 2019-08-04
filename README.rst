@@ -76,6 +76,19 @@ formatted when converting the error to a string.
 Changelog
 ---------
 
+1.8
+   Introducing an assertRaises for use in pytest. Note that this only supports
+   Python 3.6+
+
+   Usage is the same as fuzzyAssertsError, usage looks like:
+
+   .. code-block:: python
+
+      from delfick_error_pytest import assertRaises
+
+      with assertRaises(MyErrorClass, "some regex", param1="value", _errors=[error1]):
+         ...
+
 1.7.2
     Making it possible for fuzzyAssertsError to match fake delfick_error classes
 

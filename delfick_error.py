@@ -1,10 +1,10 @@
+"""pytest-cov: avoid already-imported warning: PYTEST_DONT_REWRITE."""
 from __future__ import print_function
 
 from total_ordering import total_ordering
 from contextlib import contextmanager
 import traceback
 import unittest
-import hashlib
 import sys
 import six
 import re

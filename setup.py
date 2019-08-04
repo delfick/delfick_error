@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
       name = "delfick_error"
     , version = "1.7.8"
-    , py_modules = ['delfick_error']
+    , py_modules = ['delfick_error', 'delfick_error_pytest']
 
     , install_requires =
       [ 'total-ordering'
@@ -16,6 +16,10 @@ setup(
         , "nose"
         , "mock"
         ]
+      }
+
+    , entry_points =
+      { "pytest11": ["delfick_error_pytest = delfick_error_pytest"]
       }
 
     # metadata for upload to PyPI

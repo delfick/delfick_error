@@ -4,12 +4,15 @@ from __future__ import print_function
 
 from delfick_error import DelfickError, DelfickErrorTestMixin
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
 from contextlib import contextmanager
 from unittest import TestCase
 import random
+import nose
 import uuid
 import mock
 import six
+import sys
 
 # Used in the tests
 class AError(DelfickError): pass
@@ -472,3 +475,221 @@ describe TestCase, "Tests mixin":
                         iterator.send(Expected(one=1, two=2, _errors=[e(10), e(5), e(4), e(3)]))
 
                 self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
+
+describe TestCase, "standalone assert raises":
+    before_each:
+        # The pytest assertRaises is only python3
+        version_info = sys.version_info
+        if version_info[0] < 3 or version_info[1] < 6:
+            raise nose.SkipTest()
+
+    def expecting_raised_assertion(self, *args, **kwargs):
+        """Yield (iterator, val) from _expecting_raised_assertion"""
+        iterator = self._expecting_raised_assertion(*args, **kwargs)
+        while True:
+            try:
+                val = next(iterator)
+            except StopIteration:
+                break
+            yield iterator, val
+
+    def _expecting_raised_assertion(self, called, *args, **kwargs):
+        """Assert that an assertion is raised and yield that assertion for more checks"""
+        from delfick_error_pytest import assertRaises
+
+        buf = []
+        called.append(BeforeManager)
+        yield (BeforeManager, None)
+        try:
+            with assertRaises(*args, **kwargs):
+                called.append(InsideManager)
+                for_raising = yield (InsideManager, None)
+                if for_raising:
+                    raise for_raising
+            called.append(NoAssertionRaised)
+            yield (NoAssertionRaised, None)
+        except AssertionError as error:
+            print("Assertion raised: '{0}: {1}'".format(error.__class__, error))
+            called.append(AssertionRaised)
+            buf.append((AssertionRaised, error))
+        except Exception as error:
+            print("Non assertion raised: '{0}: {1}'".format(error.__class__, error))
+            called.append(NonAssertionRaised)
+            buf.append((NonAssertionRaised, error))
+
+        # For some reason these values don't come through
+        # Unless I yield something before them
+        # Outside of the catch blocks...
+        # *keeps calm and carries on*
+        yield (None, None)
+        for val in buf:
+            yield val
+
+        # Yield called for sanity checks
+        yield (Called, called)
+
+    it "complains if no exception is raised":
+        called = []
+        for iterator, (part, val) in self.expecting_raised_assertion(called, Exception):
+            if part is InsideManager:
+                pass
+            elif part is AssertionRaised:
+                assert str(val).startswith("Expected an exception to be raised"), str(val)
+        self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
+    it "complains if exception is not a subclass of what is expected":
+        raised = TypeError("ERROR!")
+
+        called = []
+        for iterator, (part, val) in self.expecting_raised_assertion(called, ValueError):
+            if part is InsideManager:
+                iterator.send(raised)
+            elif part is AssertionRaised:
+                self.assertEqual(str(val), "Error is wrong subclass")
+
+        self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
+    it "complains if exception is subclass but doesn't match regex":
+        class Raised(ValueError): pass
+        raised = Raised("blah")
+
+        called = []
+        for iterator, (part, val) in self.expecting_raised_assertion(called, ValueError, "meh"):
+            if part is InsideManager:
+                iterator.send(raised)
+            elif part is AssertionRaised:
+                self.assertEqual(str(val), "Incorrect message")
+
+        self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
+    it "works fine if regex and subclass match":
+        class Expected(IndexError): pass
+        class Raised(Expected): pass
+        raised = Raised("stuff")
+
+        called = []
+        for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, "stuff"):
+            if part is InsideManager:
+                iterator.send(raised)
+
+        self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
+
+    describe "For DelfickError exceptions":
+        it "works on fake DelfickError class":
+            class Expected(Exception):
+                def __init__(self, message, kwarg1):
+                    self.message = message
+                    self.kwarg1 = kwarg1
+                    self.kwargs = dict(kwarg1=kwarg1)
+                    self._fake_delfick_error = True
+
+                def __str__(self):
+                    return "Expected: {0}\tkwarg1={1}".format(self.message, self.kwarg1)
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, "something", kwarg1="meh"):
+                if part is InsideManager:
+                    iterator.send(Expected("something", kwarg1="meh"))
+
+            self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, "something", kwarg1="meh"):
+                if part is InsideManager:
+                    iterator.send(Expected("something", kwarg1="other"))
+                elif part is AssertionRaised:
+                    self.assertEqual(str(val), "Mismatched values")
+
+            self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
+        it "complains if any given kwargs doesn't match":
+            class Expected(DelfickError): pass
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, one=1, two=1, three=1):
+                if part is InsideManager:
+                    iterator.send(Expected(one=1, two=2, three=3))
+                elif part is AssertionRaised:
+                    self.assertEqual(str(val), "Mismatched values")
+
+            self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
+        it "complains about any missing kwargs from what we specify":
+            class Expected(DelfickError): pass
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, one=1, three=1, four=1):
+                if part is InsideManager:
+                    iterator.send(Expected(one=1))
+                elif part is AssertionRaised:
+                    self.assertEqual(str(val), "Missing values")
+
+            self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
+        it "doesn't care about extra kwargs in what was raised":
+            class Expected(DelfickError): pass
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, one=1):
+                if part is InsideManager:
+                    iterator.send(Expected(one=1, two=2))
+
+            self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
+
+        it "complains about message before kwargs":
+            class Expected(DelfickError):
+                desc = "expected"
+            class Raised(Expected):
+                desc = "raised"
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Raised, "testing, 1.. 2.. 3", one=1, three=2):
+                if part is InsideManager:
+                    iterator.send(Raised("testing for great good", one=1, three=3))
+                elif part is AssertionRaised:
+                    self.assertEqual(str(val), "Incorrect message")
+
+            self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
+        it "complains if errors aren't the same":
+            class Expected(DelfickError): pass
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, one=1, _errors=[3, 5, 10, 4]):
+                if part is InsideManager:
+                    iterator.send(Expected(one=1, two=2, _errors=[20, 5, 4, 3]))
+                elif part is AssertionRaised:
+                    self.assertEqual(str(val), "Errors list is different")
+
+            self.assertEqual(called, [BeforeManager, InsideManager, AssertionRaised])
+
+        it "does a sorted comparison of the errors":
+            class Expected(DelfickError): pass
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, one=1, _errors=[3, 5, 10, 4]):
+                if part is InsideManager:
+                    iterator.send(Expected(one=1, two=2, _errors=[10, 5, 4, 3]))
+
+            self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
+
+        it "does a sorted comparison of the errors taking delfick_error_format objects into account":
+            class Expected(DelfickError): pass
+
+            class Thing(object):
+                def __init__(self, val):
+                    self.val = val
+
+                def delfick_error_format(self, key):
+                    return "{0}:{1}".format(key, self.val)
+
+            class Error(DelfickError): pass
+
+            e = lambda val: Error(thing=Thing(val))
+
+            called = []
+            for iterator, (part, val) in self.expecting_raised_assertion(called, Expected, one=1, _errors=[e(3), e(5), e(10), e(4)]):
+                if part is InsideManager:
+                    iterator.send(Expected(one=1, two=2, _errors=[e(10), e(5), e(4), e(3)]))
+
+            self.assertEqual(called, [BeforeManager, InsideManager, NoAssertionRaised])
