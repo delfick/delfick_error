@@ -267,7 +267,11 @@ describe TestCase, "Tests mixin":
             """Yield (iterator, val) from _expecting_raised_assertion"""
             iterator = self._expecting_raised_assertion(*args, **kwargs)
             while True:
-                val = next(iterator)
+                try:
+                    val = next(iterator)
+                except StopIteration:
+                    break
+
                 yield iterator, val
 
         def _expecting_raised_assertion(self, called, *args, **kwargs):
