@@ -6,6 +6,11 @@ This is an error class that I keep remaking in projects
 .. image:: https://travis-ci.org/delfick/delfick_error.png?branch=master
     :target: https://travis-ci.org/delfick/delfick_error
 
+Deprecated
+----------
+
+This project has been deprecated in favour of https://github.com/delfick/delfick_project
+
 Usage
 -----
 
